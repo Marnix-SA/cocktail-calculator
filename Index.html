@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Cocktail Calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Raleway:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg-deep: #101822;
+    --bg-card: #1a2332;
+    --bg-card-hover: #222e40;
+    --gold: #e8c36e;
+    --gold-light: #f0d68a;
+    --gold-dim: #b08d3e;
+    --white: #ffffff;
+    --cream: #e0e6ee;
+    --cream-soft: #b0c0d0;
+    --text-muted: #7a90a8;
+    --accent-rose: #8b3a4a;
+    --accent-copper: #b87333;
+    --accent-water: #6bafe0;
+    --border: #2e4058;
+    --shadow: rgba(0,0,0,0.5);
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    font-family: 'Raleway', 'Helvetica Neue', Arial, sans-serif;
+    background: var(--bg-deep);
+    color: var(--cream);
+    min-height: 100vh;
+    line-height: 1.6;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(ellipse at 20% 0%, rgba(232,195,110,0.03) 0%, transparent 50%),
+      radial-gradient(ellipse at 80% 100%, rgba(107,175,224,0.04) 0%, transparent 50%);
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 20px;
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    text-align: center;
+    padding: 50px 0 40px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 40px;
+  }
+
+  header h1 {
+    font-family: 'Raleway', sans-serif;
+    font-size: 2.6rem;
+    font-weight: 300;
+    color: var(--gold);
+    letter-spacing: 0.12em;
+    margin-bottom: 8px;
+    text-transform: uppercase;
+  }
+
+  header .subtitle {
+    font-size: 1rem;
+    color: var(--text-muted);
+    font-style: italic;
+    letter-spacing: 0.15em;
+    font-weight: 300;
+  }
+
+  .ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin: 18px 0 0;
+    color: var(--gold-dim);
+    font-size: 0.85rem;
+    letter-spacing: 0.3em;
+  }
+  .ornament::before, .ornament::after {
+    content: '';
+    width: 60px;
+    height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+  }
+
+  .cocktails-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+    gap: 24px;
+    margin-bottom: 40px;
+  }
+
+  @media (max-width: 480px) {
+    .cocktails-grid { grid-template-columns: 1fr; }
+    header h1 { font-size: 1.8rem; }
+  }
+
+  .cocktail-card {
+    background: var(--bg-card);
+    border: 1px solid var(--border);
+    border-radius: 3px;
+    padding: 30px;
+    transition: background 0.3s ease, border-color 0.3s ease;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .cocktail-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, var(--gold-dim), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+
+  .cocktail-card:hover {
+    background: var(--bg-card-hover);
+    border-color: var(--gold-dim);
+  }
+  .cocktail-card:hover::before { opacity: 1; }
+
+  .cocktail-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 6px;
+  }
+
+  .cocktail-name {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.5rem;
+    color: var(--gold);
+    font-weight: 600;
+    letter-spacing: 0.02em;
+  }
+
+  .cocktail-glass {
+    flex-shrink: 0;
+    margin-left: 12px;
+    opacity: 0.5;
+  }
+
+  .cocktail-single-vol {
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-bottom: 20px;
+    letter-spacing: 0.05em;
+  }
+
+  .controls {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 22px;
+  }
+
+  .control-group {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .control-label {
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .qty-control {
+    display: flex;
+    align-items: center;
+    gap: 0;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .qty-btn {
+    background: var(--bg-deep);
+    border: none;
+    color: var(--gold);
+    width: 36px;
+    height: 36px;
+    font-size: 1.2rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background 0.2s;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .qty-btn:hover { background: var(--gold-dim); color: var(--bg-deep); }
+
+  .qty-display {
+    background: var(--bg-card);
+    color: var(--cream);
+    width: 48px;
+    height: 36px;
+    text-align: center;
+    font-size: 1.1rem;
+    font-family: 'Raleway', sans-serif;
+    font-weight: 600;
+    border: none;
+    border-left: 1px solid var(--border);
+    border-right: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .mode-toggle {
+    display: flex;
+    border: 1px solid var(--border);
+    border-radius: 2px;
+    overflow: hidden;
+  }
+
+  .mode-btn {
+    padding: 8px 18px;
+    font-family: 'Raleway', sans-serif;
+    font-size: 0.85rem;
+    letter-spacing: 0.08em;
+    cursor: pointer;
+    border: none;
+    background: var(--bg-deep);
+    color: var(--text-muted);
+    transition: all 0.25s ease;
+  }
+  .mode-btn:first-child { border-right: 1px solid var(--border); }
+
+  .mode-btn.active {
+    background: var(--gold-dim);
+    color: var(--bg-deep);
+    font-weight: 600;
+  }
+  .mode-btn:hover:not(.active) { color: var(--cream-soft); }
+
+  .ingredients-table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .ingredients-table th {
+    text-align: left;
+    font-size: 0.65rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    padding: 0 0 8px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600;
+  }
+  .ingredients-table th:last-child { text-align: right; }
+
+  .ingredients-table td {
+    padding: 8px 0;
+    border-bottom: 1px solid rgba(46,64,88,0.4);
+    font-size: 1rem;
+  }
+
+  .ingredients-table td:last-child {
+    text-align: right;
+    font-weight: 600;
+    color: var(--white);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+
+  .ingredients-table tr.note-row td {
+    color: var(--text-muted);
+    font-style: italic;
+    font-size: 0.9rem;
+  }
+
+  .ingredients-table tr.water-row td {
+    color: var(--accent-water);
+    font-style: italic;
+  }
+
+  .total-row {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--gold-dim);
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+
+  .total-label {
+    font-size: 0.7rem;
+    text-transform: uppercase;
+    letter-spacing: 0.15em;
+    color: var(--text-muted);
+    font-weight: 600;
+  }
+
+  .total-value {
+    font-family: 'Raleway', sans-serif;
+    font-size: 1.5rem;
+    color: var(--white);
+    font-weight: 700;
+  }
+
+  .total-litres {
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    font-style: italic;
+    margin-left: 8px;
+  }
+
+  footer {
+    text-align: center;
+    padding: 40px 0 30px;
+    border-top: 1px solid var(--border);
+    margin-top: 20px;
+  }
+
+  footer p {
+    color: var(--text-muted);
+    font-size: 0.82rem;
+    font-style: italic;
+    letter-spacing: 0.05em;
+  }
+
+  .batch-note {
+    background: rgba(107, 175, 224, 0.08);
+    border-left: 2px solid var(--accent-water);
+    color: var(--cream-soft);
+    font-size: 0.82rem;
+    font-style: italic;
+    padding: 8px 12px;
+    margin-bottom: 18px;
+    line-height: 1.5;
+  }
+
+  .ingredient-note {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    font-style: italic;
+    display: block;
+    margin-top: 2px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <header>
+    <h1>The Cocktail Calculator</h1>
+    <p class="subtitle">batch &amp; serve with precision</p>
+    <div class="ornament">◆</div>
+  </header>
+
+  <div class="cocktails-grid" id="cocktailsGrid"></div>
+
+  <footer>
+    <p>Drink responsibly. Measure precisely.</p>
+  </footer>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════════════
+//  RECIPE DATA — Add new cocktails here
+//  Each ingredient: { name, ml, note? }
+//  If an ingredient isn't measurable in ml (e.g. garnish),
+//  use ml: 0 and add a note.
+//  Ingredient order: lime juice → fresh juices → sweeteners/liqueurs → spirits
+// ═══════════════════════════════════════════════════════════
+const COCKTAILS = [
+  {
+    name: "Coconut Margarita",
+    ingredients: [
+      { name: "Fresh Lime Juice", ml: 25 },
+      { name: "Triple Sec",       ml: 25 },
+      { name: "Blanco Tequila",   ml: 25 },
+      { name: "Coconut Tequila",  ml: 25 },
+    ]
+  },
+  {
+    name: "Standard Margarita",
+    ingredients: [
+      { name: "Fresh Lime Juice", ml: 25 },
+      { name: "Triple Sec",       ml: 25 },
+      { name: "Blanco Tequila",   ml: 50 },
+    ]
+  },
+  {
+    name: "Cosmopolitan",
+    ingredients: [
+      { name: "Fresh Lime Juice", ml: 25 },
+      { name: "Cranberry Juice",  ml: 50 },
+      { name: "Triple Sec",       ml: 17 },
+      { name: "Citrus Vodka",     ml: 25 },
+      { name: "Vodka",            ml: 12.5 },
+    ]
+  },
+  {
+    name: "Moscow Mule",
+    ingredients: [
+      { name: "Fresh Lime Juice", ml: 15 },
+      { name: "Ginger Beer",      ml: 90 },
+      { name: "Angostura Bitters", ml: 3, note: "\u2248 3 dashes" },
+      { name: "Vodka",            ml: 60 },
+    ]
+  },
+  {
+    name: "Pornstar Martini",
+    batchNote: "Batch the liquid ingredients only. Pour the bubbly individually into each glass when serving.",
+    garnish: "Half a passion fruit per serve",
+    ingredients: [
+      { name: "Fresh Lime Juice",  ml: 18.75 },
+      { name: "Passion Fruit",     ml: 0, note: "1.5 per serve", countable: true, count: 1.5 },
+      { name: "Triple Sec",        ml: 12.5, note: "Adjust to taste \u2014 depends on passion fruit sweetness" },
+      { name: "Vanilla Vodka",     ml: 37.5 },
+      { name: "Bubbly (Dry)",      ml: 75, note: "Serve individually, do not batch", batchable: false },
+    ]
+  },
+
+  // ─── ADD MORE COCKTAILS BELOW THIS LINE ───
+  // Copy this template and fill in:
+  //  Ingredient order: lime juice → fresh juices → sweeteners/liqueurs → spirits
+  //
+  // {
+  //   name: "Your Cocktail Name",
+  //   ingredients: [
+  //     { name: "Fresh Lime Juice", ml: 25 },
+  //     { name: "Sweetener",        ml: 15 },
+  //     { name: "Spirit",           ml: 50 },
+  //   ]
+  // },
+
+];
+
+// ═══════════════════════════════════════════════════════════
+//  COCKTAIL GLASS SVG ICON
+// ═══════════════════════════════════════════════════════════
+const GLASS_SVG = `<svg class="cocktail-glass" width="32" height="40" viewBox="0 0 32 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4 4 L16 22 L16 34" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <path d="M28 4 L16 22 L16 34" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+  <line x1="10" y1="34" x2="22" y2="34" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  <line x1="2" y1="4" x2="30" y2="4" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+  <path d="M7 4 Q8 12, 16 16 Q24 12, 25 4" stroke="currentColor" stroke-width="0.6" stroke-dasharray="2 2" opacity="0.4" fill="none"/>
+</svg>`;
+
+// ═══════════════════════════════════════════════════════════
+//  ENGINE
+// ═══════════════════════════════════════════════════════════
+
+const state = COCKTAILS.map(() => ({ qty: 1, mode: 'fresh' }));
+
+function formatMl(ml) {
+  const rounded = Math.round(ml * 10) / 10;
+  return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(1);
+}
+
+function formatVolume(ml) {
+  const mlStr = formatMl(ml) + ' ml';
+  if (ml >= 1000) {
+    const litres = (ml / 1000);
+    const lStr = litres % 1 === 0 ? litres.toFixed(0) : litres.toFixed(2);
+    return mlStr + ' <span class="total-litres">(' + lStr + ' L)</span>';
+  }
+  return mlStr;
+}
+
+function singleVolume(cocktail) {
+  return cocktail.ingredients.reduce((sum, i) => sum + i.ml, 0);
+}
+
+function batchableVolume(cocktail) {
+  return cocktail.ingredients
+    .filter(i => i.batchable !== false)
+    .reduce((sum, i) => sum + i.ml, 0);
+}
+
+function renderCard(cocktail, index) {
+  const s = state[index];
+  const singleVol = singleVolume(cocktail);
+
+  let rows = '';
+  cocktail.ingredients.forEach(ing => {
+    const noteHtml = ing.note ? `<span class="ingredient-note">${ing.note}</span>` : '';
+
+    if (ing.countable) {
+      const totalCount = ing.count * s.qty;
+      const countStr = totalCount % 1 === 0 ? totalCount.toFixed(0) : totalCount.toFixed(1);
+      rows += `<tr>
+        <td>${ing.name}${noteHtml}</td>
+        <td>${countStr}</td>
+      </tr>`;
+    } else {
+      const totalMl = ing.ml * s.qty;
+      rows += `<tr>
+        <td>${ing.name}${noteHtml}</td>
+        <td>${formatMl(totalMl)} ml</td>
+      </tr>`;
+    }
+  });
+
+  let totalVol = singleVol * s.qty;
+  if (s.mode === 'batch') {
+    const batchableVol = batchableVolume(cocktail) * s.qty;
+    const waterMl = batchableVol * 0.2;
+    rows += `<tr class="water-row">
+      <td>Dilution Water <span class="ingredient-note">20% of batchable ingredients</span></td>
+      <td>${formatMl(waterMl)} ml</td>
+    </tr>`;
+    totalVol += waterMl;
+  }
+
+  const garnishHtml = cocktail.garnish
+    ? `<p class="cocktail-single-vol" style="margin-top:4px; margin-bottom:0;">Garnish: ${cocktail.garnish}</p>`
+    : '';
+
+  const batchNoteHtml = (s.mode === 'batch' && cocktail.batchNote)
+    ? `<div class="batch-note">${cocktail.batchNote}</div>`
+    : '';
+
+  return `
+    <div class="cocktail-card">
+      <div class="cocktail-header">
+        <h2 class="cocktail-name">${cocktail.name}</h2>
+        ${GLASS_SVG}
+      </div>
+      <p class="cocktail-single-vol">${formatMl(singleVol)} ml per serve</p>
+      ${garnishHtml}
+
+      <div class="controls">
+        <div class="control-group">
+          <span class="control-label">Quantity</span>
+          <div class="qty-control">
+            <button class="qty-btn" onclick="adjustQty(${index}, -1)">\u2212</button>
+            <div class="qty-display">${s.qty}</div>
+            <button class="qty-btn" onclick="adjustQty(${index}, 1)">+</button>
+          </div>
+        </div>
+
+        <div class="control-group">
+          <span class="control-label">Method</span>
+          <div class="mode-toggle">
+            <button class="mode-btn ${s.mode === 'fresh' ? 'active' : ''}"
+                    onclick="setMode(${index}, 'fresh')">Fresh</button>
+            <button class="mode-btn ${s.mode === 'batch' ? 'active' : ''}"
+                    onclick="setMode(${index}, 'batch')">Batch</button>
+          </div>
+        </div>
+      </div>
+
+      ${batchNoteHtml}
+
+      <table class="ingredients-table">
+        <thead>
+          <tr>
+            <th>Ingredient</th>
+            <th>Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${rows}
+        </tbody>
+      </table>
+
+      <div class="total-row">
+        <span class="total-label">Total Volume</span>
+        <span class="total-value">${formatVolume(totalVol)}</span>
+      </div>
+    </div>
+  `;
+}
+
+function renderAll() {
+  const grid = document.getElementById('cocktailsGrid');
+  grid.innerHTML = COCKTAILS.map((c, i) => renderCard(c, i)).join('');
+}
+
+function adjustQty(index, delta) {
+  const newQty = state[index].qty + delta;
+  if (newQty >= 1 && newQty <= 25) {
+    state[index].qty = newQty;
+    renderAll();
+  }
+}
+
+function setMode(index, mode) {
+  state[index].mode = mode;
+  renderAll();
+}
+
+renderAll();
+</script>
+
+</body>
+</html>
